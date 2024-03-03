@@ -11,7 +11,7 @@ int main(void) {
     perror(NULL);
   }
 
-  char* data = {0x0};
+  char data[1] = {0x0};
   err = reader_execute(&r, 0xff, 0x76, data, 1);
   if (err) {
     printf("Reader command execution failed: %s\n", reader_error_to_string(err));
