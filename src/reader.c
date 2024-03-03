@@ -144,12 +144,12 @@ reader_error read_frame(reader_handle *const reader) {
     return READER_DEVICE_COMMUNICATION_ERROR;
   }
 
-  r = read(reader->device, response + sizeof(response), length);
+  r = read(reader->device, response + 1, length);
   if (r != length) {
     return READER_DEVICE_COMMUNICATION_ERROR;
   }
 
-  reader->length = response[0] + 1;
+  reader->length = length + 1;
   reader->response = calloc(sizeof(char), reader->length);
 
   memcpy(reader->response, response, reader->length);
