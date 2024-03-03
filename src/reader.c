@@ -119,7 +119,7 @@ reader_error reader_execute(reader_handle * const reader, char address, char com
   int ptr = 0;
 
   int r = read(reader->device, &response, 1);
-  if (r == 0 || r == -1) {
+  if (r == 0 || r == -1 || expect > 256) {
     return READER_DEVICE_COMMUNICATION_ERROR;
   }
 
@@ -128,12 +128,12 @@ reader_error reader_execute(reader_handle * const reader, char address, char com
 
   do {
     char buffer[256];
-    int r = read(reader->device, buffer, 256);
+    int r = read(reader->device, buffer, expect);
     expect -= r;
 
     memcpy(response + ptr * sizeof(char), buffer, r);
     ptr += r;
-  } while (expect <= 0);
+  } while (expect > 0);
   
 
   for (int i = 0; i < 256; i++) {
