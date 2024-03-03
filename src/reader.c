@@ -72,6 +72,8 @@ reader_error reader_init(reader_handle *reader, char const * const d_path) {
         return READER_DEVICE_CONFIGURATION_ERROR;
   }
 
+  reader->device = device;
+  
   return READER_NO_ERROR;
 }
 
