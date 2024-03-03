@@ -79,6 +79,7 @@ reader_error reader_init(reader_handle *reader, char const * const d_path) {
 
 void reader_destroy(reader_handle *r) {
   close(r->device);
+  free(r->response);
 }
 
 uint16_t crc16_mcrf4xx(uint16_t crc, char *data, size_t len)
@@ -96,7 +97,7 @@ uint16_t crc16_mcrf4xx(uint16_t crc, char *data, size_t len)
     return crc;
 }
 
-reader_error reader_execute(reader_handle * const reader, char address, char command, char* data, char size) {
+reader_error write_frame(reader_handle * const reader, char address, char command, char* data, char size) {
   size_t len = size + 5;
   char* buff = (char*) calloc(sizeof(char), len);
 
@@ -112,13 +113,22 @@ reader_error reader_execute(reader_handle * const reader, char address, char com
   buff[len-2] = (char) crc; //lsb
   buff[len-1] = (char) (crc >> 8); //msb
 
-  write(reader->device, buff, len);
+  int w = write(reader->device, buff, len);
+  free(buff);
 
-  char response[256];
+  if (w == -1) {
+    return READER_DEVICE_COMMUNICATION_ERROR;
+  }
+
+  return READER_NO_ERROR;
+}
+
+reader_error read_frame(reader_handle * const reader) {
+  char response[256] = {0};
   int length = 0;
   int r = read(reader->device, &response, 1);
-  
-  if (r == 0 || r == -1 || length > 256) {
+
+  if (r <= 0 || length > 256) {
     return READER_DEVICE_COMMUNICATION_ERROR;
   }
 
@@ -126,22 +136,33 @@ reader_error reader_execute(reader_handle * const reader, char address, char com
 
   char buffer[256] = {0};
   r = read(reader->device, buffer, length);
-  memcpy(response + sizeof(char), buffer, r);
-
-  for (int i = 0; i < length; i++) {
-    if(response[i] != 0x0) {
-      printf("%0x", response[i]);
-    }
-    printf("\n");
+  if (r != length) {
+    return READER_DEVICE_COMMUNICATION_ERROR;
   }
+
+  memcpy(response + sizeof(char), buffer, r);
 
   reader->response_size = response[0] + 1;
   reader->response = (char*) calloc(sizeof(char), reader->response_size);
 
   memcpy(reader->response, response, reader->response_size);
 
-  free(buff);
-  free(reader->response);
+  return READER_NO_ERROR;
+}
 
+reader_error reader_execute(reader_handle * const reader, char address, char command, char* data, char size) {
+  
+  reader_error err;
+
+  err = write_frame(reader, address, command, data, size);
+  if (err != READER_NO_ERROR) {
+    return err;
+  }
+  
+  err = read_frame(reader);
+    if (err != READER_NO_ERROR) {
+    return err;
+  }
+  
   return READER_NO_ERROR;
 }
