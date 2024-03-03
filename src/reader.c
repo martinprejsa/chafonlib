@@ -126,15 +126,9 @@ reader_error reader_execute(reader_handle * const reader, char address, char com
   expect = response[0];
   ptr += 1;
 
-  do {
-    char buffer[256];
-    int r = read(reader->device, buffer, expect);
-    expect -= r;
-
-    memcpy(response + ptr * sizeof(char), buffer, r);
-    ptr += r;
-  } while (expect > 0);
-  
+  char buffer[256];
+  r = read(reader->device, buffer, expect);
+  memcpy(response + ptr * sizeof(char), buffer, r);
 
   for (int i = 0; i < 256; i++) {
     if(response[i] != 0x0) {
