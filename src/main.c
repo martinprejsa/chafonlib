@@ -17,12 +17,23 @@ int main(void) {
     printf("Reader command execution failed: %s\n", reader_error_to_string(err));
     perror(NULL);
   }
+  if (r.response[2] != 0x76) {
+    printf("Invalid response\n");
+  } else {
+    printf("Reader set to answer mode");
+  }
 
-  err = reader_execute(&r, 0xff, 0x21, NULL, 0);
+  err = reader_execute(&r, 0xff, 0x92, NULL, 0);
   if (err) {
     printf("Reader command execution failed: %s\n", reader_error_to_string(err));
     perror(NULL);
   }
+
+  if (r.response[2] != 0x92) {
+    printf("Invalid response\n");
+  }
+
+  printf("Temperature: %d\n", r.response[5]);
 
   reader_destroy(&r);
 }
