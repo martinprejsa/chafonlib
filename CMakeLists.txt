@@ -3,4 +3,4 @@ project(chafon-reader C)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_executable(chafon-reader src/reader.h src/reader.c src/main.c)
+add_library(chafon-reader src/reader.h src/reader.c src/main.c)
