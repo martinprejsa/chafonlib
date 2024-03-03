@@ -87,7 +87,7 @@ void reader_destroy(reader_handle *r) {
   free(r->response);
 }
 
-uint16_t crc16_mcrf4xx(uint16_t crc, int8_t *data, size_t len) {
+uint16_t crc16_mcrf4xx(uint16_t crc, uint8_t *data, size_t len) {
   if (!data || len < 0)
     return crc;
 
@@ -110,7 +110,7 @@ reader_error write_frame(reader_handle *const reader, uint8_t address,
   }
 
   size_t len = size + 5;
-  int8_t *buff = (int8_t*)calloc(sizeof(char), len);
+  uint8_t *buff = (uint8_t*)calloc(sizeof(char), len);
 
   buff[0] = len - 1;
   // adr + cmd + crc = 4bytes
