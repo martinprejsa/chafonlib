@@ -127,7 +127,7 @@ reader_error reader_execute(reader_handle * const reader, char address, char com
   ptr += 1;
 
   do {
-    char* buffer[256];
+    char buffer[256];
     int r = read(reader->device, buffer, 256);
     expect -= r;
 
