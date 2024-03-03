@@ -115,22 +115,20 @@ reader_error reader_execute(reader_handle * const reader, char address, char com
   write(reader->device, buff, len);
 
   char response[256];
-  int expect = 0;
-  int ptr = 0;
-
+  int length = 0;
   int r = read(reader->device, &response, 1);
-  if (r == 0 || r == -1 || expect > 256) {
+  
+  if (r == 0 || r == -1 || length > 256) {
     return READER_DEVICE_COMMUNICATION_ERROR;
   }
 
-  expect = response[0];
-  ptr += 1;
+  length = response[0];
 
-  char buffer[256];
-  r = read(reader->device, buffer, expect);
-  memcpy(response + ptr * sizeof(char), buffer, r);
+  char buffer[256] = {0};
+  r = read(reader->device, buffer, length);
+  memcpy(response + sizeof(char), buffer, r);
 
-  for (int i = 0; i < 256; i++) {
+  for (int i = 0; i < length; i++) {
     if(response[i] != 0x0) {
       printf("%0x", response[i]);
     }
