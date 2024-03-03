@@ -39,7 +39,7 @@ reader_error reader_init(reader_handle *reader, char const * const device);
  * 
  * @param reader the reader handle
  */
-void         reader_destroy(reader_handle *reader);
+void reader_destroy(reader_handle *reader);
 
 /**
  * @brief Executes a reader command
@@ -52,5 +52,6 @@ void         reader_destroy(reader_handle *reader);
  * @param size command data size, must not exceed 251
  * @return reader_error use reader_error_to_string
  */
-reader_error         reader_execute(reader_handle * const reader, uint8_t address, uint8_t command, uint8_t* data, uint8_t size);
+reader_error reader_execute(reader_handle * const reader, uint8_t address,
+                              uint8_t command, uint8_t* data, uint8_t size);
 #endif

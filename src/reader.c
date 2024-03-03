@@ -9,7 +9,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-char const *const reader_error_strings[] = {
+static char const *const reader_error_strings[] = {
     "READER_NO_ERROR",
     "READER_DEVICE_CONFIGURATION_ERROR",
     "READER_DEVICE_COMMUNICATION_ERROR",
@@ -139,11 +139,12 @@ reader_error read_frame(reader_handle *const reader) {
   int length = 0;
   int r = read(reader->device, &response, 1);
 
+  length = response[0];
   if (r <= 0 || length < 4) {
     return READER_DEVICE_COMMUNICATION_ERROR;
   }
-  
-  r = read(reader->device, response + sizeof(char), length);
+
+  r = read(reader->device, response + sizeof(response), length);
   if (r != length) {
     return READER_DEVICE_COMMUNICATION_ERROR;
   }
