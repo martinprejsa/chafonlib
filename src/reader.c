@@ -73,7 +73,7 @@ reader_error reader_init(reader_handle *reader, char const * const d_path) {
   }
 
   reader->device = device;
-  
+
   return READER_NO_ERROR;
 }
 
@@ -114,16 +114,16 @@ reader_error reader_execute(reader_handle * const reader, char address, char com
 
   write(reader->device, buff, len);
 
-  char* response[256];
+  char response[256];
   int expect = 0;
   int ptr = 0;
 
-  int r = read(reader->device, response, 1);
+  int r = read(reader->device, &response, 1);
   if (r == 0 || r == -1) {
     return READER_DEVICE_COMMUNICATION_ERROR;
   }
 
-  expect = *response[0];
+  expect = response[0];
   ptr += 1;
 
   do {
@@ -138,12 +138,12 @@ reader_error reader_execute(reader_handle * const reader, char address, char com
 
   for (int i = 0; i < 256; i++) {
     if(response[i] != 0x0) {
-      printf("%0x", *response[i]);
+      printf("%0x", response[i]);
     }
     printf("\n");
   }
 
-  reader->response_size = *response[0] + 1;
+  reader->response_size = response[0] + 1;
   reader->response = (char*) calloc(sizeof(char), reader->response_size);
 
   memcpy(reader->response, response, reader->response_size);
