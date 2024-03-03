@@ -94,7 +94,7 @@ uint16_t crc16_mcrf4xx(uint16_t crc, char *data, size_t len)
     return crc;
 }
 
-reader_error reader_execute(reader_handle * const reader, char command, char address, char* data, char size) {
+reader_error reader_execute(reader_handle * const reader, char address, char command, char* data, char size) {
   size_t len = size + 5;
   char* buff = (char*) calloc(sizeof(char), len);
 
@@ -117,7 +117,7 @@ reader_error reader_execute(reader_handle * const reader, char command, char add
   int ptr = 0;
 
   int r = read(reader->device, response, 1);
-  if (r == 0) {
+  if (r == 0 || r == -1) {
     return READER_DEVICE_COMMUNICATION_ERROR;
   }
 
