@@ -121,8 +121,8 @@ reader_error write_frame(reader_handle *const reader, uint8_t address,
 
   uint16_t crc = crc16_mcrf4xx(0xFFFF, buff, len - 2);
 
-  buff[len - 2] = (char)crc;        // lsb
-  buff[len - 1] = (char)(crc >> 8); // msb
+  buff[len - 2] = (uint8_t)crc;        // lsb
+  buff[len - 1] = (uint8_t)(crc >> 8); // msb
 
   int w = write(reader->device, buff, len);
   free(buff);
@@ -137,7 +137,7 @@ reader_error write_frame(reader_handle *const reader, uint8_t address,
 reader_error read_frame(reader_handle *const reader) {
   uint8_t response[255] = {0};
   int length = 0;
-  int r = read(reader->device, &response, 1);
+  int r = read(reader->device, &response, sizeof(uint8_t));
 
   length = response[0];
   if (r <= 0 || length < 4) {
@@ -150,7 +150,7 @@ reader_error read_frame(reader_handle *const reader) {
   }
 
   reader->length = length + 1;
-  reader->response = calloc(sizeof(uint8_t), reader->length);
+  reader->response = calloc(sizeof(uint8_t), reader->length); // memleak
 
   memcpy(reader->response, response, reader->length);
 
