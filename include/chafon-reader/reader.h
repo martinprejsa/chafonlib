@@ -3,13 +3,27 @@
 
 #include <stdint.h>
 
-typedef enum reader_error {
+typedef enum {
   READER_NO_ERROR = 0,
   READER_DEVICE_CONFIGURATION_ERROR,
   READER_DEVICE_COMMUNICATION_ERROR,
   READER_INVALID_PARAMETER,
   READER_ERROR_SIZE
 } reader_error;
+
+typedef enum {
+  READER_UNKNOWN_MODE,
+  READER_ANSWER_MODE,
+  READER_RTI_MODE, // real time inventory mode
+  READER_RTIT_MODE, // real time inventory mode with trigger
+} reader_mode;
+
+typedef struct {
+  uint8_t ant;
+  uint8_t size;
+  uint8_t *data;
+  uint8_t rssi;
+} reader_rti_data;
 
 typedef struct {
   uint8_t address;
@@ -28,7 +42,9 @@ typedef struct {
 
 typedef struct reader_handle {
   int device;
+  reader_mode mode;
   reader_response response;
+  reader_rti_data rti_data;
 } reader_handle;
 
 /**

@@ -26,12 +26,7 @@ int main() {
     return 1;
   }
 
-  if (r.response.command != READER_CMD_CHANGE_MODE) {
-    printf("Invalid response\n");
-    return 1;
-  } else {
-    printf("Reader set to answer mode\n");
-  }
+  printf("Reader set to answer mode\n");
 
   reader_command obtaintemp = {
     .address = READER_ADR_BROADCAST,
@@ -44,11 +39,6 @@ int main() {
   if (err) {
     printf("Reader command execution failed: %s\n", reader_error_to_string(err));
     perror(NULL);
-    return 1;
-  }
-
-  if (r.response.command != READER_CMD_OBTAIN_TEMP) {
-    printf("Invalid response\n");
     return 1;
   }
 

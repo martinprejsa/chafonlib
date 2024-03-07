@@ -7,5 +7,7 @@
 #define READER_CMD_CHANGE_MODE 0x76
 #define READER_CMD_OBTAIN_TEMP 0x92
 
+#define READER_RCMD_RTI 0xee
+
 #define READER_ARG_ANSWER_MODE 0x0
 #endif
