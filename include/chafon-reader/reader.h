@@ -2,6 +2,7 @@
 #define READER_READER_H
 
 #include <stdint.h>
+#include <commands.h>
 
 typedef enum {
   READER_NO_ERROR = 0,

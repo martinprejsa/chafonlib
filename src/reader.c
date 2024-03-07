@@ -1,5 +1,4 @@
 #include "reader.h"
-#include "commands.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -121,7 +120,7 @@ reader_error write_frame(reader_handle *const reader, reader_command const c) {
   }
 
   size_t len = c.size + 5;
-  uint8_t *buff = (uint8_t*)calloc(`(char), len);
+  uint8_t *buff = (uint8_t*)calloc(sizeof(char), len);
 
   buff[0] = len - 1;
   // adr + cmd + crc = 4bytes
