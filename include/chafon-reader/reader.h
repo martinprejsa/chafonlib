@@ -11,10 +11,24 @@ typedef enum reader_error {
   READER_ERROR_SIZE
 } reader_error;
 
+typedef struct {
+  uint8_t address;
+  uint8_t command;
+  uint8_t size; // data size
+  uint8_t *data;
+} reader_command;
+
+typedef struct {
+  uint8_t address;
+  uint8_t command;
+  uint8_t status;
+  uint8_t size; // data size
+  uint8_t *data;
+} reader_response;
+
 typedef struct reader_handle {
   int device;
-  int length;
-  uint8_t* response;
+  reader_response response;
 } reader_handle;
 
 /**
@@ -46,12 +60,9 @@ void reader_destroy(reader_handle *reader);
  *        and stores it's result in the reader handle.
  * 
  * @param reader reader handle
- * @param address reader's address, 0xFF broadcast, 0x00 default
  * @param command command to execute
- * @param data command data
- * @param size command data size, must not exceed 251
  * @return reader_error use reader_error_to_string
  */
-reader_error reader_execute(reader_handle * const reader, uint8_t address,
-                              uint8_t command, uint8_t* data, uint8_t size);
+reader_error reader_execute(reader_handle * const reader, 
+                              reader_command const command);
 #endif

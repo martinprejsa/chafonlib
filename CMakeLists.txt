@@ -3,4 +3,10 @@ project(chafon-reader C)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_library(chafon-reader src/reader.h src/reader.c src/main.c)
+add_library(chafon-reader src/reader.c)
+target_include_directories(chafon-reader PUBLIC include/chafon-reader)
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
+  include(CTest)
+  add_subdirectory(tests)
+endif()

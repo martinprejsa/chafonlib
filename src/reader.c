@@ -9,6 +9,8 @@
 #include <termios.h>
 #include <unistd.h>
 
+static char* description = NULL;
+
 static char const *const reader_error_strings[] = {
     "READER_NO_ERROR",
     "READER_DEVICE_CONFIGURATION_ERROR",
@@ -26,7 +28,10 @@ char const *reader_error_to_string(reader_error r) {
 
 reader_error reader_init(reader_handle *reader, char const *const d_path) {
   int device = open(d_path, O_RDWR);
-
+  if (device) {
+    return READER_DEVICE_CONFIGURATION_ERROR;
+  }
+  
   struct termios tty;
   if (tcgetattr(device, &tty) != 0) {
     return READER_DEVICE_CONFIGURATION_ERROR;
@@ -84,7 +89,7 @@ reader_error reader_init(reader_handle *reader, char const *const d_path) {
 
 void reader_destroy(reader_handle *r) {
   close(r->device);
-  free(r->response);
+  free(r->response.data);
 }
 
 uint16_t crc16_mcrf4xx(uint16_t crc, uint8_t *data, size_t len) {
@@ -103,21 +108,20 @@ uint16_t crc16_mcrf4xx(uint16_t crc, uint8_t *data, size_t len) {
   return crc;
 }
 
-reader_error write_frame(reader_handle *const reader, uint8_t address,
-                         uint8_t command, uint8_t *data, uint8_t size) {
-  if (size > 251) {
+reader_error write_frame(reader_handle *const reader, reader_command const c) {
+  if (c.size > 251) {
     return READER_INVALID_PARAMETER;
   }
 
-  size_t len = size + 5;
+  size_t len = c.size + 5;
   uint8_t *buff = (uint8_t*)calloc(sizeof(char), len);
 
   buff[0] = len - 1;
   // adr + cmd + crc = 4bytes
-  buff[1] = address;
-  buff[2] = command;
+  buff[1] = c.address;
+  buff[2] = c.command;
 
-  memcpy(buff + sizeof(char) * 3, data, size);
+  memcpy(buff + sizeof(char) * 3, c.data, c.size);
 
   uint16_t crc = crc16_mcrf4xx(0xFFFF, buff, len - 2);
 
@@ -149,18 +153,31 @@ reader_error read_frame(reader_handle *const reader) {
     return READER_DEVICE_COMMUNICATION_ERROR;
   }
 
-  reader->length = length + 1;
-  reader->response = calloc(sizeof(uint8_t), reader->length); // memleak
+  uint16_t crc = (response[length-2] | (response[length-1] << 7));
+  
 
-  memcpy(reader->response, response, reader->length);
+  reader_response resp = {
+    .command = response[1],
+    .address = response[2],
+    .status = response[3],
+    .size = length - 5,
+    .data = calloc(sizeof(uint8_t), resp.size),
+  };
+
+  memcpy(resp.data, response + 4 * sizeof(uint8_t), resp.size);
+
+  if (reader->response.data != NULL) {
+    free(reader->response.data);
+  }
+
+  reader->response = resp;
 
   return READER_NO_ERROR;
 }
 
-reader_error reader_execute(reader_handle *const reader, uint8_t address,
-                            uint8_t command, uint8_t *data, uint8_t size) {
+reader_error reader_execute(reader_handle *const reader, reader_command const command) {
   reader_error err;
-  err = write_frame(reader, address, command, data, size);
+  err = write_frame(reader, command);
   if (err != READER_NO_ERROR) {
     return err;
   }
