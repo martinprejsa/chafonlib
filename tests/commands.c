@@ -1,14 +1,13 @@
 #include <stdio.h>
-#include "reader.h"
-#include "commands.h"
+#include "chafon-reader/reader.h"
+#include "chafon-reader/commands.h"
 
 int main() {
   reader_handle r;
 
-  int err = reader_init(&r, "/dev/ttyUSB0");
-  if (err) {
-    printf("Reader initialization failed: %s\n", reader_error_to_string(err));
-    perror(NULL);
+  reader_error err = reader_init(&r, "/dev/ttyUSB0");
+  if (err.kind != READER_NO_ERROR) {
+    printf("Reader initialization failed %s: %s\n", reader_error_to_string(err), err.message);
     return 1;
   }
 
@@ -20,9 +19,8 @@ int main() {
   };
 
   err = reader_execute(&r, setreadermode);
-  if (err) {
-    printf("Reader command execution failed: %s\n", reader_error_to_string(err));
-    perror(NULL);
+  if (err.kind != READER_NO_ERROR) {
+    printf("Reader command execution failed %s: %s\n", reader_error_to_string(err), err.message);
     return 1;
   }
 
@@ -36,9 +34,8 @@ int main() {
   };
 
   err = reader_execute(&r, obtaintemp);
-  if (err) {
-    printf("Reader command execution failed: %s\n", reader_error_to_string(err));
-    perror(NULL);
+  if (err.kind != READER_NO_ERROR) {
+    printf("Reader command execution failed %s: %s\n", reader_error_to_string(err), err.message);
     return 1;
   }
 

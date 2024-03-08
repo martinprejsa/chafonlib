@@ -2,7 +2,7 @@
 #define READER_READER_H
 
 #include <stdint.h>
-#include <commands.h>
+#include <chafon-reader/commands.h>
 
 typedef enum {
   READER_NO_ERROR = 0,
@@ -10,6 +10,11 @@ typedef enum {
   READER_DEVICE_COMMUNICATION_ERROR,
   READER_INVALID_PARAMETER,
   READER_ERROR_SIZE
+} reader_error_kind;
+
+typedef struct {
+  char* message;
+  reader_error_kind kind;
 } reader_error;
 
 typedef enum {
@@ -50,6 +55,14 @@ typedef struct reader_handle {
 
 /**
  * @brief Used to retrieve message from an error.
+ * 
+ * @param error the error
+ * @return char const* message
+ */
+char const * reader_error_to_string(reader_error error);
+
+/**
+ * @brief Used to retrieve detailed description of an error
  * 
  * @param error the error
  * @return char const* message
