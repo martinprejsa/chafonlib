@@ -27,7 +27,7 @@ char const *reader_error_to_string(reader_error r) {
 
 reader_error reader_init(reader_handle *reader, char const *const d_path) {
   int device = open(d_path, O_RDWR);
-  if (device) {
+  if (!device) {
     return (reader_error) {
       .kind = READER_DEVICE_CONFIGURATION_ERROR,
       .message = strerror(errno)
