@@ -11,7 +11,8 @@ Tested on:
 
 During answer mode:
 ```C
-#include <chafon-reader/reader.h>
+#include <chafonlib/reader.h>
+#include <chafonlib/commands.h>
 ...
   reader_handle r; // create the handle
 
