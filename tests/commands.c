@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include "chafon-reader/reader.h"
-#include "chafon-reader/commands.h"
+
+#include <chafonlib/reader.h>
+#include <chafonlib/commands.h>
 
 int main() {
   reader_handle r;

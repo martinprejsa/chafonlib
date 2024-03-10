@@ -2,7 +2,6 @@
 #define READER_READER_H
 
 #include <stdint.h>
-#include <chafon-reader/commands.h>
 
 typedef enum {
   READER_NO_ERROR = 0,
@@ -16,20 +15,6 @@ typedef struct {
   char* message;
   reader_error_kind kind;
 } reader_error;
-
-typedef enum {
-  READER_UNKNOWN_MODE,
-  READER_ANSWER_MODE,
-  READER_RTI_MODE, // real time inventory mode
-  READER_RTIT_MODE, // real time inventory mode with trigger
-} reader_mode;
-
-typedef struct {
-  uint8_t ant;
-  uint8_t size;
-  uint8_t *data;
-  uint8_t rssi;
-} reader_rti_data;
 
 typedef struct {
   uint8_t address;
@@ -46,12 +31,25 @@ typedef struct {
   uint8_t *data;
 } reader_response;
 
-typedef struct reader_handle {
+typedef struct {
+  uint8_t ant;
+  uint8_t size;
+  uint8_t *data;
+  uint8_t rssi;
+} reader_rti_data;
+
+typedef struct {
+
+} reader_rti_heartbeat;
+
+typedef struct {
   int device;
-  reader_mode mode;
   reader_response response;
-  reader_rti_data rti_data;
+
+  reader_rti_data rti_response;
+  reader_rti_heartbeat rti_heartbeat;
 } reader_handle;
+
 
 /**
  * @brief Used to retrieve message from an error.
@@ -95,4 +93,11 @@ void reader_destroy(reader_handle *reader);
  */
 reader_error reader_execute(reader_handle * const reader, 
                               reader_command const command);
+
+/**
+ * @brief Should be used during RTI mode, reads current buffer.
+ * @param reader reader handle
+ * @return reader_error use reader_error_to_string
+ */
+reader_error reader_rti_read(reader_handle * const reader);
 #endif

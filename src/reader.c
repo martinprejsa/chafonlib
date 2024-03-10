@@ -1,4 +1,5 @@
-#include "chafon-reader/reader.h"
+#include "chafonlib/reader.h"
+#include "chafonlib/commands.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -11,11 +12,8 @@
 #include <unistd.h>
 
 static char const *const reader_error_strings[] = {
-    "READER_NO_ERROR",
-    "READER_DEVICE_CONFIGURATION_ERROR",
-    "READER_DEVICE_COMMUNICATION_ERROR",
-    "READER_INVALID_PARAMETER"
-};
+    "READER_NO_ERROR", "READER_DEVICE_CONFIGURATION_ERROR",
+    "READER_DEVICE_COMMUNICATION_ERROR", "READER_INVALID_PARAMETER"};
 
 char const *reader_error_to_string(reader_error r) {
   char const *error = NULL;
@@ -28,18 +26,14 @@ char const *reader_error_to_string(reader_error r) {
 reader_error reader_init(reader_handle *reader, char const *const d_path) {
   int device = open(d_path, O_RDWR);
   if (!device) {
-    return (reader_error) {
-      .kind = READER_DEVICE_CONFIGURATION_ERROR,
-      .message = strerror(errno)
-    };
+    return (reader_error){.kind = READER_DEVICE_CONFIGURATION_ERROR,
+                          .message = strerror(errno)};
   }
 
   struct termios tty;
   if (tcgetattr(device, &tty) != 0) {
-    return (reader_error) {
-      .kind = READER_DEVICE_CONFIGURATION_ERROR,
-      .message = strerror(errno)
-    };
+    return (reader_error){.kind = READER_DEVICE_CONFIGURATION_ERROR,
+                          .message = strerror(errno)};
   }
 
   struct termios {
@@ -84,17 +78,12 @@ reader_error reader_init(reader_handle *reader, char const *const d_path) {
   cfsetospeed(&tty, B57600);
 
   if (tcsetattr(device, TCSANOW, &tty) != 0) {
-    return (reader_error) {
-      .kind = READER_DEVICE_CONFIGURATION_ERROR,
-      .message = strerror(errno)
-    };
+    return (reader_error){.kind = READER_DEVICE_CONFIGURATION_ERROR,
+                          .message = strerror(errno)};
   }
 
   reader->device = device;
-  reader->mode = READER_UNKNOWN_MODE;
-  return (reader_error) {
-      .kind = READER_NO_ERROR
-  };
+  return (reader_error){.kind = READER_NO_ERROR};
 }
 
 void reader_destroy(reader_handle *r) {
@@ -120,14 +109,12 @@ uint16_t crc16_mcrf4xx(uint16_t crc, uint8_t *data, size_t len) {
 
 reader_error write_frame(reader_handle *const reader, reader_command const c) {
   if (c.size > 251) {
-    return (reader_error) {
-      .kind = READER_INVALID_PARAMETER,
-      .message = "command data length too large"
-    };
+    return (reader_error){.kind = READER_INVALID_PARAMETER,
+                          .message = "command data length too large"};
   }
 
   size_t len = c.size + 5;
-  uint8_t *buff = (uint8_t*)calloc(sizeof(char), len);
+  uint8_t *buff = (uint8_t *)calloc(sizeof(char), len);
 
   buff[0] = len - 1;
   // adr + cmd + crc = 4bytes
@@ -145,87 +132,81 @@ reader_error write_frame(reader_handle *const reader, reader_command const c) {
   free(buff);
 
   if (w == -1) {
-    return (reader_error) {
-      .kind = READER_DEVICE_COMMUNICATION_ERROR,
-      .message = "unexpected EOF"
-    };
+    return (reader_error){.kind = READER_DEVICE_COMMUNICATION_ERROR,
+                          .message = "unexpected EOF"};
   }
 
-  return (reader_error) {
-      .kind = READER_NO_ERROR
-  };
+  return (reader_error){.kind = READER_NO_ERROR};
 }
 
 reader_error read_frame(reader_handle *const reader) {
-  uint8_t response[255] = {0};
+  uint8_t buffer[255] = {0};
   int length = 0;
-  int r = read(reader->device, &response, sizeof(uint8_t));
+  int r = read(reader->device, &buffer, sizeof(uint8_t));
 
-  length = response[0];
+  length = buffer[0];
   if (r <= 0 || length < 4) {
-    return (reader_error) {
-      .kind = READER_DEVICE_COMMUNICATION_ERROR,
-      .message = "unexpected packet size recieved"
-    };
+    return (reader_error){.kind = READER_DEVICE_COMMUNICATION_ERROR,
+                          .message = "unexpected packet size recieved"};
   }
 
-  r = read(reader->device, response + sizeof(uint8_t), length);
+  r = read(reader->device, buffer + sizeof(uint8_t), length);
   if (r != length) {
-    return (reader_error) {
+    return (reader_error){
       .kind = READER_DEVICE_COMMUNICATION_ERROR,
       .message = "unexpected packet size recieved"
     };
   }
 
-  uint16_t crc = (response[length-2] | (response[length-1] << 7));
-  //TODO: crc check
+  uint16_t crc = (buffer[length - 2] | (buffer[length - 1] << 7));
+  // TODO: crc check
 
-  reader_response resp = {
-    .command = response[1],
-    .address = response[2],
-    .status = response[3],
-    .size = length - 5,
-    .data = calloc(sizeof(uint8_t), resp.size),
+  reader_response response = {
+      .command = buffer[1],
+      .address = buffer[2],
+      .status = buffer[3],
+      .size = length - 5,
+      .data = calloc(sizeof(uint8_t), response.size),
   };
 
-  memcpy(resp.data, response + 4 * sizeof(uint8_t), resp.size);
+  memcpy(response.data, buffer + 4 * sizeof(uint8_t), response.size);
 
   if (reader->response.data != NULL) {
     free(reader->response.data);
   }
 
-  reader->response = resp;
+  reader->response = response;
 
-  if (resp.command == READER_RCMD_RTI) {
-    if (reader->rti_data.data != NULL) {
-      free(reader->rti_data.data);
+  if (response.command == READER_RCMD_RTI) {
+    if (response.status == READER_RSTATUS_RTI_TAG_FOUND) {
+      if (reader->rti_response.data != NULL) {
+        free(reader->rti_response.data);
+      }
+
+      uint8_t rti_data_len = response.size - 3;
+      uint8_t *rti_data = (uint8_t *)calloc(sizeof(uint8_t), rti_data_len);
+      memcpy(rti_data, response.data + 2, rti_data_len);
+      reader->rti_response = (reader_rti_data){
+          .ant = response.data[0],
+          .data = response.data,
+          .rssi = response.data[response.size - 1],
+      };
+    } else if (response.status ==  READER_RSTATUS_RTI_NO_TAG_FOUND) {
+      //TODO: parse heartbeat packet
     }
-
-    uint8_t rti_data_len = resp.size - 3;
-    uint8_t *rti_data = (uint8_t*) calloc(sizeof(uint8_t), rti_data_len);
-    memcpy(rti_data, resp.data+2, rti_data_len);
-    reader->rti_data = (reader_rti_data) {
-      .ant = resp.data[0],
-      .data = resp.data,
-      .rssi = resp.data[resp.size-1],
-    };
   }
 
-  return (reader_error) {
-      .kind = READER_NO_ERROR
-  };
+  return (reader_error){.kind = READER_NO_ERROR};
 }
 
-reader_error reader_execute(reader_handle *const reader, reader_command const command) {
-  if (
-    (reader->mode == READER_RTI_MODE || reader->mode == READER_RTIT_MODE) &&
-    (command.command != READER_CMD_OBTAIN_INFO || command.command != READER_CMD_CHANGE_MODE)
-  ) {
-    return (reader_error) {
-      .kind = READER_INVALID_PARAMETER,
-      .message = "invalid command for current mode"
-    };
-  }
+reader_error reader_execute(reader_handle *const reader,
+                            reader_command const command) {
+  // if ((reader->mode == READER_RTI_MODE || reader->mode == READER_RTIT_MODE) &&
+      // (command.command != READER_CMD_OBTAIN_INFO ||
+      //  command.command != READER_CMD_CHANGE_MODE)) {
+    // return (reader_error){.kind = READER_INVALID_PARAMETER,
+                          // .message = "invalid command for current mode"};
+  // }
 
   reader_error err;
   err = write_frame(reader, command);
@@ -239,13 +220,19 @@ reader_error reader_execute(reader_handle *const reader, reader_command const co
   }
 
   if (reader->response.command != command.command) {
-    return (reader_error) {
-      .kind = READER_DEVICE_COMMUNICATION_ERROR,
-      .message = "response command does not match executed command"
-    };
+    return (reader_error){
+        .kind = READER_DEVICE_COMMUNICATION_ERROR,
+        .message = "response command does not match executed command"};
   }
 
-  return (reader_error) {
-      .kind = READER_NO_ERROR
-  };
+  return (reader_error){.kind = READER_NO_ERROR};
+}
+
+reader_error reader_rti_read(reader_handle * const reader) {
+  reader_error err = read_frame(reader);
+  if (err.kind) {
+    return err;
+  }
+
+  return (reader_error){.kind = READER_NO_ERROR};
 }
