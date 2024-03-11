@@ -1,7 +1,6 @@
 add_executable(tests commands.c)
 
-target_link_libraries(tests PRIVATE chafon-reader)
-target_include_directories(tests PRIVATE ../include)
+target_link_libraries(tests PRIVATE chafonlib)
 
 add_test(
   NAME tests
