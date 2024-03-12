@@ -7,36 +7,50 @@ C library to interact with CHAFON UHF RFID Reader. <br>
 Tested on:
   - `CF-RU6403`
 
-# Usage
+# Example
+## Change reader mode
 
-During answer mode:
 ```C
 #include <chafonlib/reader.h>
 #include <chafonlib/commands.h>
 ...
-  reader_handle r; // create the handle
+  reader_handle r;
 
-  int err = reader_init(&r, "/dev/ttyUSB0"); //initialize the handle
+  // Initialize the reader handle, usually the reader device is available on
+  // /dev/ttyUSB0, if no other serial devices are connected
+  int err = reader_init(&r, "/dev/ttyUSB0");
   if (err) {
-    // use reader_error_to_string to obtain error strings
     printf("Reader initialization failed: %s\n", reader_error_to_string(err)); 
     return 1;
   }
 
-  reader_command setreadermode = { // create the command
+  // Here we can set all the command parameters
+  reader_command setreadermode = {
     .address = READER_ADR_BROADCAST,
     .command = READER_CMD_CHANGE_MODE,
     .size = 1,
     .data = (uint8_t[]) {READER_ARG_ANSWER_MODE},
   };
 
-  err = reader_execute(&r, setreadermode); // execute the command
+  // Here we execute the command. The reader's response will be stored
+  // in the reader handle.
+  err = reader_execute(&r, setreadermode);
   if (err) {
     printf("Reader command execution failed: %s\n", reader_error_to_string(err));
+    reader_destroy(&r);
     return 1;
   }
 
-  reader_destroy(&r); // and clean up
+  // Don't forget to check for reader errors
+  if (r.response.status != 0x0) {
+    printf("Reader mode unchanged.");
+    reader_destroy(&r);
+    return 1;
+  }
+
+  // And don't forget to clean up
+  reader_destroy(&r);
+
   printf("Reader mode changed!"); 
 ...
 ```
